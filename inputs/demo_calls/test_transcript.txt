@@ -1,0 +1,19 @@
+Agent: Thank you for calling, this is Clara. How can I help you today?
+
+Client: Hi, yes. We're Anderson Fire Protection based in Dallas, Texas. 
+We handle sprinkler systems and fire alarms. Our office is open Monday 
+through Friday, 8am to 5pm. We're getting overwhelmed with after hours 
+calls and need help routing emergencies to our on-call technician. 
+His number is 214-555-0199. A real emergency for us is an active 
+sprinkler discharge or a fire alarm going off. Everything else can 
+wait till morning.
+
+Agent: Got it. And what system do you currently use for job management?
+
+Client: We use ServiceTrade. But never create sprinkler jobs automatically, 
+we handle those manually.
+
+Agent: Understood. Is there anything else I should know?
+
+Client: If the on-call doesn't pick up within 60 seconds, just let the 
+caller know someone will call them back shortly.
