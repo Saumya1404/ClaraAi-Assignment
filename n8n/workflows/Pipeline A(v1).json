@@ -1,0 +1,391 @@
+{
+  "name": "Pipeline A(v1)",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -496,
+        16
+      ],
+      "id": "2c07098c-28b6-4ee3-a189-3504b1b01fbb",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "fileSelector": "/home/node/inputs/demo_calls/test_transcript.txt",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        -304,
+        16
+      ],
+      "id": "8dacf6d7-5e98-47ab-b9b8-eb1ad097d2e1",
+      "name": "Read/Write Files from Disk"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an AI that extracts structured business configuration data from call transcripts.\n\nExtract the following fields and return ONLY valid JSON, no explanation, no markdown backticks:\n\n- company_name\n- business_hours (days, start, end, timezone)\n- office_address\n- services_supported\n- emergency_definition\n- emergency_routing_rules\n- non_emergency_routing_rules\n- call_transfer_rules\n- integration_constraints\n- after_hours_flow_summary\n- office_hours_flow_summary\n- questions_or_unknowns\n- notes\n\nIf a field is missing from the transcript, set it to null. Never invent data.\n\nTranscript: {{ $json.data }}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        112,
+        16
+      ],
+      "id": "980362a6-290a-467a-9406-575538d6e79c",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-flash-latest",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        64,
+        224
+      ],
+      "id": "8ed3e024-1a90-49ee-a707-eece2f014236",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "dAjmSirYQxBS5BHa",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        -96,
+        32
+      ],
+      "id": "368b572f-4eab-40bb-b159-35bdccb109c1",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.text;\n\nconst cleaned = raw.replace(/```json|```/g, '').trim();\nconst memo = JSON.parse(cleaned);\n\nconst company = memo.company_name || 'unknown';\nconst account_id = company\n  .toLowerCase()\n  .replace(/[^a-z0-9]/g, '_')\n  .replace(/_+/g, '_');\n\nmemo.account_id = account_id;\nmemo.version = 'v1';\nmemo.created_at = new Date().toISOString();\n\nreturn [{\n  json: {\n    memo_text: JSON.stringify(memo, null, 2),\n    account_id: account_id\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        432,
+        32
+      ],
+      "id": "cbae06df-bb9e-4e79-a2db-1d0e8827a78b",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "command": "=mkdir -p /home/node/outputs/accounts/{{$json.account_id}}/v1"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        864,
+        -240
+      ],
+      "id": "e22ff421-e23f-4bf5-9379-c8e4e22fce06",
+      "name": "Execute Command1"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "memo_text, account_id",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        640,
+        -16
+      ],
+      "id": "7f061699-c8f1-4841-9767-a64dff451d76",
+      "name": "Split Out1"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/home/node/outputs/accounts/{{ $('Split Out1').item.json.account_id }}/v1/account_memo.json",
+        "dataPropertyName": "=data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        1280,
+        -16
+      ],
+      "id": "40ce42a1-dd06-4a6b-9d41-7ec8619999f2",
+      "name": "Read/Write Files from Disk1"
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "memo_text",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        912,
+        -16
+      ],
+      "id": "c16d37cf-642e-4219-b9cc-b60fa523420b",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an AI that generates voice agent configurations for service trade businesses.\n\nUsing the account memo below, generate a Retell agent spec as ONLY valid JSON with exactly these fields:\n\n{\n  \"agent_name\": \"Clara - <company name>\",\n  \"voice_style\": \"professional and empathetic\",\n  \"version\": \"v1\",\n  \"key_variables\": {\n    \"timezone\": \"\",\n    \"business_hours\": \"\",\n    \"emergency_routing_number\": \"\",\n    \"transfer_number\": \"\"\n  },\n  \"call_transfer_protocol\": \"\",\n  \"fallback_protocol\": \"\",\n  \"system_prompt\": \"\"\n}\n\nThe system_prompt MUST follow this exact structure:\n\nBUSINESS HOURS FLOW:\n1. Greet the caller warmly and introduce yourself as Clara\n2. Ask the purpose of their call\n3. Collect caller name and phone number\n4. Transfer to the appropriate contact\n5. If transfer fails: apologize and assure callback within business hours\n6. Ask if anything else is needed\n7. Close the call politely\n\nAFTER HOURS FLOW:\n1. Greet the caller and inform them they have reached after hours\n2. Ask the purpose of their call\n3. Confirm whether it is an emergency\n4. If emergency: collect name, number, and address immediately then attempt transfer\n5. If transfer fails: apologize and assure someone will call back as soon as possible\n6. If non-emergency: collect details and confirm follow-up during next business hours\n7. Ask if anything else is needed\n8. Close the call politely\n\nRules:\n- Never mention function calls or internal tools to the caller\n- Only collect what is needed for routing and dispatch\n- Keep language natural, warm and professional\n- Fill key_variables using data from the memo\n- Return ONLY valid JSON, no explanation, no markdown backticks\n\nAccount Memo:\n{{ $json.memo_text }}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        768,
+        240
+      ],
+      "id": "85c62e05-442c-410d-b515-9c12b378ce6b",
+      "name": "Basic LLM Chain2"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        704,
+        448
+      ],
+      "id": "5da92987-6439-4fb0-bef4-b0abc9a248b5",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "dAjmSirYQxBS5BHa",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.text;\nconst cleaned = raw.replace(/```json|```/g, '').trim();\nconst agent_spec = JSON.parse(cleaned);\n\nconst account_id = $('Split Out1').first().json.account_id;\n\nagent_spec.account_id = account_id;\nagent_spec.version = 'v1';\nagent_spec.generated_at = new Date().toISOString();\n\nreturn [{ json: { agent_spec, account_id, agent_spec_text: JSON.stringify(agent_spec, null, 2) } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        240
+      ],
+      "id": "244dc33b-5b5b-40c1-8815-db821f4ed8cb",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/home/node/outputs/accounts/{{ $('Code in JavaScript1').first().json.account_id }}/v1/agent_spec.json",
+        "dataPropertyName": "=data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        1552,
+        240
+      ],
+      "id": "15325a11-f4fb-430f-ae26-c2d010a07a8b",
+      "name": "Read/Write Files from Disk2"
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "agent_spec_text",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1328,
+        240
+      ],
+      "id": "be14fc94-4b10-43c3-8512-a0a08be4c1d9",
+      "name": "Convert to File1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read/Write Files from Disk": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Split Out1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Command1": {
+      "main": [
+        []
+      ]
+    },
+    "Split Out1": {
+      "main": [
+        [
+          {
+            "node": "Execute Command1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Basic LLM Chain2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain2": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Convert to File1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File1": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "f3f5e282-3963-4624-bf33-2346592f603b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ffd7cb84353aa39ad75055ccd52e39ab3cbeb17bf8a2ec023995a8853686a478"
+  },
+  "id": "8iu17u8YDIkPm6UV",
+  "tags": []
+}
