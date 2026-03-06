@@ -1,0 +1,106 @@
+{
+  "account_id": "anderson_fire_protection",
+  "from_version": "v1",
+  "to_version": "v2",
+  "generated_at": "2026-03-06T08:47:27.002Z",
+  "total_changes": 10,
+  "total_conflicts": 4,
+  "changes": [
+    {
+      "field": "business_hours",
+      "v1_value": "Monday-Friday, 8am-5pm",
+      "v2_value": "Monday-Saturday, 7am-6pm, CST",
+      "reason": "Client expanded business days and hours and specified CST timezone.",
+      "conflict": true
+    },
+    {
+      "field": "office_address",
+      "v1_value": "Dallas, Texas",
+      "v2_value": "4521 Commerce Street, Dallas, Texas 75226",
+      "reason": "The office has moved to a new specific location.",
+      "conflict": true
+    },
+    {
+      "field": "services_supported",
+      "v1_value": "sprinkler systems, fire alarms",
+      "v2_value": "sprinkler systems, fire alarms, fire extinguisher inspections, hood suppression systems",
+      "reason": "Added two new service types.",
+      "conflict": false
+    },
+    {
+      "field": "emergency_definition",
+      "v1_value": "An active sprinkler discharge or a fire alarm going off.",
+      "v2_value": "An active sprinkler discharge, a fire alarm going off, or a hood suppression system discharge.",
+      "reason": "Added hood suppression discharge as an emergency trigger.",
+      "conflict": false
+    },
+    {
+      "field": "emergency_routing_rules",
+      "v1_value": "Route to on-call technician at 214-555-0199.",
+      "v2_value": "Try Mike (214-555-0199) for 45s, then Sarah (214-555-0342) for 45s, then take urgent message. Send text summary to 214-555-0500.",
+      "reason": "Updated to a two-person on-call rotation with a text summary requirement.",
+      "conflict": true
+    },
+    {
+      "field": "non_emergency_routing_rules",
+      "v1_value": "Hold until the following morning.",
+      "v2_value": "Hold until the following morning and send a text summary to 214-555-0500.",
+      "reason": "Added requirement to text the office manager for all calls.",
+      "conflict": false
+    },
+    {
+      "field": "call_transfer_rules",
+      "v1_value": "If the on-call technician does not pick up within 60 seconds, inform the caller that someone will call them back shortly.",
+      "v2_value": "45s timeout for on-call techs; 30s timeout for office hours front desk transfer.",
+      "reason": "Updated timeout durations and added office hours transfer logic.",
+      "conflict": true
+    },
+    {
+      "field": "integration_constraints",
+      "v1_value": "Use ServiceTrade; do not create sprinkler jobs automatically.",
+      "v2_value": "Use ServiceTrade; auto-create fire alarm inspection jobs; do not create sprinkler jobs automatically.",
+      "reason": "Updated to allow automatic job creation for fire alarm inspections.",
+      "conflict": false
+    },
+    {
+      "field": "office_hours_flow_summary",
+      "v1_value": "null",
+      "v2_value": "Transfer to front desk (214-555-0100) with 30s timeout.",
+      "reason": "Defined the handling process for calls received during business hours.",
+      "conflict": false
+    },
+    {
+      "field": "notes",
+      "v1_value": "null",
+      "v2_value": "Switching to FieldEdge in the future.",
+      "reason": "Client provided information about an upcoming software migration.",
+      "conflict": false
+    }
+  ],
+  "conflicts": [
+    {
+      "field": "business_hours",
+      "v1_value": "Monday-Friday, 8am-5pm",
+      "v2_value": "Monday-Saturday, 7am-6pm",
+      "resolution": "Updated to v2 as the client explicitly stated they expanded their hours."
+    },
+    {
+      "field": "office_address",
+      "v1_value": "Dallas, Texas",
+      "v2_value": "4521 Commerce Street, Dallas, Texas 75226",
+      "resolution": "Updated to v2 because the client stated the main office moved."
+    },
+    {
+      "field": "emergency_routing_rules",
+      "v1_value": "Route to single technician at 214-555-0199.",
+      "v2_value": "Sequential routing to two technicians with a message failover.",
+      "resolution": "Updated to v2 to reflect the new on-call protocol."
+    },
+    {
+      "field": "call_transfer_rules",
+      "v1_value": "60 second timeout",
+      "v2_value": "45 second timeout for techs, 30 second for office",
+      "resolution": "Updated to v2 as the client explicitly corrected the timeout duration."
+    }
+  ]
+}

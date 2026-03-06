@@ -1,0 +1,15 @@
+{
+  "task_id": "anderson_fire_protection_v2_1772786871073",
+  "title": "Review v2 Agent: Anderson Fire Protection",
+  "account_id": "anderson_fire_protection",
+  "version": "v2",
+  "status": "pending_review",
+  "created_at": "2026-03-06T08:47:51.073Z",
+  "description": "v2 account_memo and agent_spec generated for Anderson Fire Protection from onboarding call. 10 change(s), 4 conflict(s). Review outputs before deploying to Retell.",
+  "outputs": {
+    "account_memo": "/outputs/accounts/anderson_fire_protection/v2/account_memo.json",
+    "agent_spec": "/outputs/accounts/anderson_fire_protection/v2/agent_spec.json",
+    "changelog": "/outputs/accounts/anderson_fire_protection/v2/changelog.json"
+  },
+  "integration_note": "Replace Write Task File with an HTTP Request node to push this task to Asana, Trello, or Notion externally."
+}

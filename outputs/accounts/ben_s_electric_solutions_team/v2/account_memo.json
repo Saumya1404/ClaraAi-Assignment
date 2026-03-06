@@ -1,0 +1,39 @@
+{
+  "company_name": "Ben's Electric Solutions Team",
+  "business_hours": {
+    "days": [
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday"
+    ],
+    "start": "08:00 AM",
+    "end": "04:30 PM",
+    "timezone": null
+  },
+  "office_address": null,
+  "services_supported": [
+    "Service calls",
+    "Small jobs",
+    "Residential electrical services",
+    "Quotes for new clients"
+  ],
+  "emergency_definition": "Calls from existing builders or G&M Pressure Washing regarding gas station properties (Chevron and Esso).",
+  "emergency_routing_rules": "Emergency calls from G&M Pressure Washing (specifically Shelley) regarding gas station properties should be patched through directly to Ben.",
+  "non_emergency_routing_rules": "For general callers after hours, the agent informs them they will be contacted the next business day. During office hours, calls currently forward to Clara if Ben ignores/declines. Once Ben's second number is active, Clara will answer first and transfer to Ben's second line if required.",
+  "call_transfer_rules": "Clara can transfer calls to Ben's second line (to be activated) if a customer insists or if a specific emergency criteria is met. Forwarding is currently configured for when Ben declines or fails to answer his Android device.",
+  "integration_constraints": "System must send post-call notifications via email (info@benselectricsolutionsteam.com) and SMS to the business mainline. Call data must be accessible via a web dashboard.",
+  "after_hours_flow_summary": "Clara answers all incoming calls. Recognized emergencies from G&M Pressure Washing (Shelley) are patched to Ben. Others are informed of a next-business-day callback.",
+  "office_hours_flow_summary": "Calls currently ring Ben first; if unanswered, Clara handles service fee info ($115 call-out, $98/hr residential), gathers lead info, or transfers back to Ben. Transition plan is to have Clara answer first once Ben has his second personal number.",
+  "questions_or_unknowns": [
+    "Timezone for business hours",
+    "Confirmation of second personal phone number activation (expected Friday)",
+    "Specific addresses for gas station properties (Shelley usually provides this info on the call)"
+  ],
+  "notes": "Service fee: $115 call-out fee (covers getting to site), then $98/hour ($49 per half-hour increment). Clara should only mention fees if specifically asked by the caller. Client is using an Android device and plan to separate personal calls to a second line.",
+  "account_id": "ben_s_electric_solutions_team",
+  "version": "v2",
+  "created_at": "2026-03-06T10:55:27.876Z",
+  "based_on_v1": "2026-03-06T10:53:43.363Z"
+}

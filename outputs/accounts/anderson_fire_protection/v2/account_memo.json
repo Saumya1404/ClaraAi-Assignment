@@ -1,0 +1,36 @@
+{
+  "company_name": "Anderson Fire Protection",
+  "business_hours": {
+    "days": [
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday"
+    ],
+    "start": "7am",
+    "end": "6pm",
+    "timezone": "CST"
+  },
+  "office_address": "4521 Commerce Street, Dallas, Texas 75226",
+  "services_supported": [
+    "sprinkler systems",
+    "fire alarms",
+    "fire extinguisher inspections",
+    "hood suppression systems"
+  ],
+  "emergency_definition": "An active sprinkler discharge, a fire alarm going off, or a hood suppression system discharge.",
+  "emergency_routing_rules": "Route to Mike at 214-555-0199; if no answer within 45 seconds, route to Sarah at 214-555-0342. If neither picks up, take a message and mark it urgent. Send a text summary to 214-555-0500 for all calls.",
+  "non_emergency_routing_rules": "Hold until the following business morning and send a text summary to the office manager at 214-555-0500.",
+  "call_transfer_rules": "On-call technicians have 45-second timeouts. During office hours, transfer to the front desk at 214-555-0100 with a 30-second timeout before taking a message.",
+  "integration_constraints": "Use ServiceTrade; fire alarm inspection jobs can be created automatically; do not create sprinkler jobs automatically (must be handled manually).",
+  "after_hours_flow_summary": "Emergencies (sprinkler discharge, fire alarm, or hood suppression discharge) are routed sequentially to Mike and Sarah (45s each) before taking an urgent message. Non-emergencies are held until the morning. All after-hours calls trigger a text summary to the office manager at 214-555-0500.",
+  "office_hours_flow_summary": "Transfer all calls to the front desk at 214-555-0100. If they do not pick up within 30 seconds, take a message.",
+  "questions_or_unknowns": null,
+  "notes": "Company is in the process of switching from ServiceTrade to FieldEdge, but no changes should be made to the integration yet.",
+  "account_id": "anderson_fire_protection",
+  "version": "v2",
+  "created_at": "2026-03-06T08:47:27.002Z",
+  "based_on_v1": "2026-03-06T07:55:30.145Z"
+}

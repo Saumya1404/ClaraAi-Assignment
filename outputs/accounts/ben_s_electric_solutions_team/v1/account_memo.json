@@ -1,0 +1,38 @@
+{
+  "company_name": "Ben's Electric Solutions Team",
+  "business_hours": {
+    "days": [
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday"
+    ],
+    "start": "08:00 AM",
+    "end": "04:30 PM",
+    "timezone": null
+  },
+  "office_address": null,
+  "services_supported": [
+    "Service calls",
+    "Small jobs",
+    "Residential electrical services",
+    "Quotes for new clients"
+  ],
+  "emergency_definition": "Calls from existing builders or specific property management (G&M Pressure Washing) regarding 24/7 operations like gas stations (Chevron and Esso).",
+  "emergency_routing_rules": "Emergency calls from G&M Pressure Washing (specifically Shelley) regarding gas station properties should be patched through directly to Ben.",
+  "non_emergency_routing_rules": "For general callers after hours, the agent informs them they will be contacted the next business day. During office hours, if Ben does not answer or declines, the call forwards to the AI agent.",
+  "call_transfer_rules": "The AI (Clara) can transfer calls to Ben if a customer insists or if a specific emergency criteria is met. Forwarding is currently configured to trigger when Ben declines or fails to answer his Android device.",
+  "integration_constraints": "System must send post-call notifications via email (info@benselectricsolutionsteam.com) and SMS. Call data must be accessible via a web dashboard.",
+  "after_hours_flow_summary": "Clara answers all incoming calls. If the call is a recognized emergency from G&M Pressure Washing, it is patched to Ben. Otherwise, Clara captures details and informs the caller they will receive a callback the next business day.",
+  "office_hours_flow_summary": "Calls first ring Ben's personal/business line. If unanswered, Clara answers to provide service fee information ($115 call-out, $98/hr residential), gather lead info, or transfer the caller back to Ben if necessary.",
+  "questions_or_unknowns": [
+    "Timezone for business hours",
+    "Confirmation if the second personal phone number will be active by Friday",
+    "Specific addresses for all 20 gas station properties managed by G&M"
+  ],
+  "notes": "Service fee: $115 call-out fee (covers getting to site), then $98/hour ($49 per half-hour increment). AI agent name is Clara. Client is currently using an Android device for call forwarding.",
+  "account_id": "ben_s_electric_solutions_team",
+  "version": "v1",
+  "created_at": "2026-03-06T10:53:43.363Z"
+}

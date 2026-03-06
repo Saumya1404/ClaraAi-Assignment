@@ -1,0 +1,39 @@
+{
+  "account_id": "ben_s_electric_solutions_team",
+  "from_version": "v1",
+  "to_version": "v2",
+  "generated_at": "2026-03-06T10:55:27.876Z",
+  "total_changes": 4,
+  "total_conflicts": 0,
+  "changes": [
+    {
+      "field": "notes",
+      "v1_value": "Service fee: $115 call-out fee (covers getting to site), then $98/hour ($49 per half-hour increment). AI agent name is Clara. Client is currently using an Android device for call forwarding.",
+      "v2_value": "Service fee: $115 call-out fee (covers getting to site), then $98/hour ($49 per half-hour increment). Clara should only mention fees if specifically asked by the caller. Client is using an Android device and plan to separate personal calls to a second line.",
+      "reason": "Ben specified that Clara should only mention the service fee if callers ask or want to clarify, not on every call. He also confirmed his plan for a second number.",
+      "conflict": false
+    },
+    {
+      "field": "integration_constraints",
+      "v1_value": "System must send post-call notifications via email (info@benselectricsolutionsteam.com) and SMS. Call data must be accessible via a web dashboard.",
+      "v2_value": "System must send post-call notifications via email (info@benselectricsolutionsteam.com) and SMS to the business mainline. Call data must be accessible via a web dashboard.",
+      "reason": "Confirmed the mainline number should receive the SMS notifications and verified the email address.",
+      "conflict": false
+    },
+    {
+      "field": "office_hours_flow_summary",
+      "v1_value": "Calls first ring Ben's personal/business line. If unanswered, Clara answers to provide service fee information ($115 call-out, $98/hr residential), gather lead info, or transfer the caller back to Ben if necessary.",
+      "v2_value": "Calls currently ring Ben first; if unanswered, Clara handles service fee info ($115 call-out, $98/hr residential), gathers lead info, or transfers back to Ben. Transition plan is to have Clara answer first once Ben has his second personal number.",
+      "reason": "Clarified the future state where Clara becomes the first point of contact once the second line is active.",
+      "conflict": false
+    },
+    {
+      "field": "non_emergency_routing_rules",
+      "v1_value": "For general callers after hours, the agent informs them they will be contacted the next business day. During office hours, if Ben does not answer or declines, the call forwards to the AI agent.",
+      "v2_value": "For general callers after hours, the agent informs them they will be contacted the next business day. During office hours, calls currently forward to Clara if Ben ignores/declines. Once Ben's second number is active, Clara will answer first and transfer to Ben's second line if required.",
+      "reason": "Updated to include the strategy for the second personal phone number.",
+      "conflict": false
+    }
+  ],
+  "conflicts": []
+}
