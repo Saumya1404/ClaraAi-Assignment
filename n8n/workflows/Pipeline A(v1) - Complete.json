@@ -1,0 +1,471 @@
+{
+  "name": "Pipeline A(v1) - Complete",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "/home/node/inputs/demo_calls",
+        "events": ["add"],
+        "options": {
+          "usePolling": true
+        }
+      },
+      "type": "n8n-nodes-base.localFileTrigger",
+      "typeVersion": 1,
+      "position": [-800, 0],
+      "id": "c1a00000-0000-0000-0000-000000000001",
+      "name": "Watch Demo Calls Folder"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [-800, -200],
+      "id": "c1a00000-0000-0000-0000-000000000025",
+      "name": "Manual Test Trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "set-path-01",
+              "name": "path",
+              "value": "/home/node/inputs/demo_calls/*.txt",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-560, -200],
+      "id": "c1a00000-0000-0000-0000-000000000026",
+      "name": "Set Test Path"
+    },
+    {
+      "parameters": {
+        "fileSelector": "={{ $json.path }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [-560, 0],
+      "id": "c1a00000-0000-0000-0000-000000000002",
+      "name": "Read Transcript"
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [-320, 0],
+      "id": "c1a00000-0000-0000-0000-000000000003",
+      "name": "Extract Text"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an AI that extracts structured business configuration data from call transcripts.\n\nExtract the following fields and return ONLY valid JSON, no explanation, no markdown backticks:\n\n- company_name\n- business_hours (days, start, end, timezone)\n- office_address\n- services_supported\n- emergency_definition\n- emergency_routing_rules\n- non_emergency_routing_rules\n- call_transfer_rules\n- integration_constraints\n- after_hours_flow_summary\n- office_hours_flow_summary\n- questions_or_unknowns\n- notes\n\nIf a field is missing from the transcript, set it to null. Never invent data.\n\nTranscript: {{ $json.data }}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [-80, 0],
+      "id": "c1a00000-0000-0000-0000-000000000004",
+      "name": "LLM Extract Memo"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-flash-latest",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [-128, 200],
+      "id": "c1a00000-0000-0000-0000-000000000005",
+      "name": "Gemini Chat Model 1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "dAjmSirYQxBS5BHa",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.text;\nconst cleaned = raw.replace(/```json|```/g, '').trim();\nconst memo = JSON.parse(cleaned);\n\nconst company = memo.company_name || 'unknown';\nconst account_id = company\n  .toLowerCase()\n  .replace(/[^a-z0-9]/g, '_')\n  .replace(/_+/g, '_')\n  .replace(/^_|_$/g, '');\n\nmemo.account_id = account_id;\nmemo.version = 'v1';\nmemo.created_at = new Date().toISOString();\n\n// Post-extraction validation: flag any missing critical fields\nconst criticalFields = [\n  'company_name',\n  'business_hours',\n  'emergency_definition',\n  'emergency_routing_rules',\n  'non_emergency_routing_rules'\n];\n\nconst validation_warnings = criticalFields\n  .filter(f => !memo[f])\n  .map(f => `Missing critical field: ${f}`);\n\nif (memo.business_hours) {\n  ['days', 'start', 'end'].forEach(f => {\n    if (!memo.business_hours[f]) {\n      validation_warnings.push(`Missing business_hours.${f}`);\n    }\n  });\n}\n\nreturn [{\n  json: {\n    memo,\n    memo_text: JSON.stringify(memo, null, 2),\n    account_id,\n    validation_warnings,\n    has_warnings: validation_warnings.length > 0\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [160, 0],
+      "id": "c1a00000-0000-0000-0000-000000000006",
+      "name": "Parse Memo"
+    },
+    {
+      "parameters": {
+        "command": "=test -f /home/node/outputs/accounts/{{ $json.account_id }}/v1/account_memo.json && echo \"exists\" || echo \"not_exists\""
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [400, 0],
+      "id": "c1a00000-0000-0000-0000-000000000007",
+      "name": "Idempotency Check"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "cond-idem-01",
+              "leftValue": "={{ ($json.stdout || '').trim() }}",
+              "rightValue": "exists",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [640, 0],
+      "id": "c1a00000-0000-0000-0000-000000000008",
+      "name": "Skip If v1 Exists"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [880, -200],
+      "id": "c1a00000-0000-0000-0000-000000000009",
+      "name": "Already Processed - Skip"
+    },
+    {
+      "parameters": {
+        "command": "=mkdir -p /home/node/outputs/accounts/{{ $('Parse Memo').first().json.account_id }}/v1 && mkdir -p /home/node/outputs/tasks"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [880, 0],
+      "id": "c1a00000-0000-0000-0000-000000000010",
+      "name": "Make Output Dirs"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Re-expose Parse Memo data so downstream nodes can use $json fields directly\nreturn [{ json: $('Parse Memo').first().json }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 0],
+      "id": "c1a00000-0000-0000-0000-000000000011",
+      "name": "Restore Memo Data"
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "memo_text",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [1360, 0],
+      "id": "c1a00000-0000-0000-0000-000000000012",
+      "name": "Memo to File"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/home/node/outputs/accounts/{{ $('Parse Memo').first().json.account_id }}/v1/account_memo.json",
+        "dataPropertyName": "=data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [1600, 0],
+      "id": "c1a00000-0000-0000-0000-000000000013",
+      "name": "Write account_memo.json"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Post-extraction validation log — always written, passed=true means no missing fields\nconst { account_id, validation_warnings, has_warnings } = $('Parse Memo').first().json;\n\nconst log = {\n  account_id,\n  version: 'v1',\n  validated_at: new Date().toISOString(),\n  passed: !has_warnings,\n  warnings: validation_warnings\n};\n\nreturn [{ json: { validation_log_text: JSON.stringify(log, null, 2) } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1840, 0],
+      "id": "c1a00000-0000-0000-0000-000000000014",
+      "name": "Build Validation Log"
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "validation_log_text",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [2080, 0],
+      "id": "c1a00000-0000-0000-0000-000000000015",
+      "name": "Validation Log to File"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/home/node/outputs/accounts/{{ $('Parse Memo').first().json.account_id }}/v1/validation_flags.json",
+        "dataPropertyName": "=data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [2320, 0],
+      "id": "c1a00000-0000-0000-0000-000000000016",
+      "name": "Write Validation Flags"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an AI that generates voice agent configurations for service trade businesses.\n\nUsing the account memo below, generate a Retell agent spec as ONLY valid JSON with exactly these fields:\n\n{\n  \"agent_name\": \"Clara - <company name>\",\n  \"voice_style\": \"professional and empathetic\",\n  \"version\": \"v1\",\n  \"key_variables\": {\n    \"timezone\": \"\",\n    \"business_hours\": \"\",\n    \"emergency_routing_number\": \"\",\n    \"transfer_number\": \"\"\n  },\n  \"tool_invocation_placeholders\": {\n    \"check_business_hours\": \"[internal] Check current time against business hours to determine call flow\",\n    \"transfer_call\": \"[internal] Initiate call transfer to the appropriate number\",\n    \"create_callback_task\": \"[internal] Log a callback request when transfer fails\",\n    \"lookup_account\": \"[internal] Look up caller information in the system\"\n  },\n  \"call_transfer_protocol\": \"\",\n  \"fallback_protocol\": \"\",\n  \"system_prompt\": \"\"\n}\n\nThe tool_invocation_placeholders field must contain internal tool names the agent uses behind the scenes. These must NEVER be mentioned to the caller. Generate placeholders relevant to the account routing and dispatch needs.\n\nThe system_prompt MUST follow this exact structure:\n\nBUSINESS HOURS FLOW:\n1. Greet the caller warmly and introduce yourself as Clara\n2. Ask the purpose of their call\n3. Collect caller name and phone number\n4. Transfer to the appropriate contact\n5. If transfer fails: apologize and assure callback within business hours\n6. Ask if anything else is needed\n7. Close the call politely\n\nAFTER HOURS FLOW:\n1. Greet the caller and inform them they have reached after hours\n2. Ask the purpose of their call\n3. Confirm whether it is an emergency\n4. If emergency: collect name, number, and address immediately then attempt transfer\n5. If transfer fails: apologize and assure someone will call back as soon as possible\n6. If non-emergency: collect details and confirm follow-up during next business hours\n7. Ask if anything else is needed\n8. Close the call politely\n\nRules:\n- Never mention function calls or internal tools to the caller\n- Only collect what is needed for routing and dispatch\n- Keep language natural, warm and professional\n- Fill key_variables using data from the memo\n- Return ONLY valid JSON, no explanation, no markdown backticks\n\nAccount Memo:\n{{ $('Parse Memo').first().json.memo_text }}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [2560, 0],
+      "id": "c1a00000-0000-0000-0000-000000000017",
+      "name": "LLM Agent Spec"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-flash-latest",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [2512, 200],
+      "id": "c1a00000-0000-0000-0000-000000000018",
+      "name": "Gemini Chat Model 2",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "dAjmSirYQxBS5BHa",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.text;\nconst cleaned = raw.replace(/```json|```/g, '').trim();\nconst agent_spec = JSON.parse(cleaned);\n\nconst account_id = $('Parse Memo').first().json.account_id;\n\nagent_spec.account_id = account_id;\nagent_spec.version = 'v1';\nagent_spec.generated_at = new Date().toISOString();\n\nreturn [{ json: { agent_spec_text: JSON.stringify(agent_spec, null, 2), account_id } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2800, 0],
+      "id": "c1a00000-0000-0000-0000-000000000019",
+      "name": "Parse Agent Spec"
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "agent_spec_text",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [3040, 0],
+      "id": "c1a00000-0000-0000-0000-000000000020",
+      "name": "Spec to File"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/home/node/outputs/accounts/{{ $('Parse Memo').first().json.account_id }}/v1/agent_spec.json",
+        "dataPropertyName": "=data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [3280, 0],
+      "id": "c1a00000-0000-0000-0000-000000000021",
+      "name": "Write agent_spec.json"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Task tracker item — swap the Write Task File node for an HTTP Request\n// node targeting Asana, Trello, or Notion when ready for production.\nconst { account_id, memo } = $('Parse Memo').first().json;\n\nconst task = {\n  task_id: `${account_id}_v1_${Date.now()}`,\n  title: `Review v1 Agent: ${memo.company_name || account_id}`,\n  account_id,\n  version: 'v1',\n  status: 'pending_review',\n  created_at: new Date().toISOString(),\n  description: `v1 account_memo and agent_spec generated for ${memo.company_name || account_id}. Review outputs before deploying to Retell.`,\n  outputs: {\n    account_memo: `/outputs/accounts/${account_id}/v1/account_memo.json`,\n    agent_spec: `/outputs/accounts/${account_id}/v1/agent_spec.json`,\n    validation_flags: `/outputs/accounts/${account_id}/v1/validation_flags.json`\n  },\n  integration_note: 'Replace Write Task File with an HTTP Request node to push this task to Asana, Trello, or Notion externally.'\n};\n\nreturn [{ json: { task_text: JSON.stringify(task, null, 2) } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3520, 0],
+      "id": "c1a00000-0000-0000-0000-000000000022",
+      "name": "Build Task Item"
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "task_text",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [3760, 0],
+      "id": "c1a00000-0000-0000-0000-000000000023",
+      "name": "Task to File"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/home/node/outputs/tasks/{{ $('Parse Memo').first().json.account_id }}_v1_task.json",
+        "dataPropertyName": "=data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [4000, 0],
+      "id": "c1a00000-0000-0000-0000-000000000024",
+      "name": "Write Task File"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Watch Demo Calls Folder": {
+      "main": [
+        [{ "node": "Read Transcript", "type": "main", "index": 0 }]
+      ]
+    },
+    "Manual Test Trigger": {
+      "main": [
+        [{ "node": "Set Test Path", "type": "main", "index": 0 }]
+      ]
+    },
+    "Set Test Path": {
+      "main": [
+        [{ "node": "Read Transcript", "type": "main", "index": 0 }]
+      ]
+    },
+    "Read Transcript": {
+      "main": [
+        [{ "node": "Extract Text", "type": "main", "index": 0 }]
+      ]
+    },
+    "Extract Text": {
+      "main": [
+        [{ "node": "LLM Extract Memo", "type": "main", "index": 0 }]
+      ]
+    },
+    "Gemini Chat Model 1": {
+      "ai_languageModel": [
+        [{ "node": "LLM Extract Memo", "type": "ai_languageModel", "index": 0 }]
+      ]
+    },
+    "LLM Extract Memo": {
+      "main": [
+        [{ "node": "Parse Memo", "type": "main", "index": 0 }]
+      ]
+    },
+    "Parse Memo": {
+      "main": [
+        [{ "node": "Idempotency Check", "type": "main", "index": 0 }]
+      ]
+    },
+    "Idempotency Check": {
+      "main": [
+        [{ "node": "Skip If v1 Exists", "type": "main", "index": 0 }]
+      ]
+    },
+    "Skip If v1 Exists": {
+      "main": [
+        [{ "node": "Already Processed - Skip", "type": "main", "index": 0 }],
+        [{ "node": "Make Output Dirs", "type": "main", "index": 0 }]
+      ]
+    },
+    "Make Output Dirs": {
+      "main": [
+        [{ "node": "Restore Memo Data", "type": "main", "index": 0 }]
+      ]
+    },
+    "Restore Memo Data": {
+      "main": [
+        [{ "node": "Memo to File", "type": "main", "index": 0 }]
+      ]
+    },
+    "Memo to File": {
+      "main": [
+        [{ "node": "Write account_memo.json", "type": "main", "index": 0 }]
+      ]
+    },
+    "Write account_memo.json": {
+      "main": [
+        [{ "node": "Build Validation Log", "type": "main", "index": 0 }]
+      ]
+    },
+    "Build Validation Log": {
+      "main": [
+        [{ "node": "Validation Log to File", "type": "main", "index": 0 }]
+      ]
+    },
+    "Validation Log to File": {
+      "main": [
+        [{ "node": "Write Validation Flags", "type": "main", "index": 0 }]
+      ]
+    },
+    "Write Validation Flags": {
+      "main": [
+        [{ "node": "LLM Agent Spec", "type": "main", "index": 0 }]
+      ]
+    },
+    "Gemini Chat Model 2": {
+      "ai_languageModel": [
+        [{ "node": "LLM Agent Spec", "type": "ai_languageModel", "index": 0 }]
+      ]
+    },
+    "LLM Agent Spec": {
+      "main": [
+        [{ "node": "Parse Agent Spec", "type": "main", "index": 0 }]
+      ]
+    },
+    "Parse Agent Spec": {
+      "main": [
+        [{ "node": "Spec to File", "type": "main", "index": 0 }]
+      ]
+    },
+    "Spec to File": {
+      "main": [
+        [{ "node": "Write agent_spec.json", "type": "main", "index": 0 }]
+      ]
+    },
+    "Write agent_spec.json": {
+      "main": [
+        [{ "node": "Build Task Item", "type": "main", "index": 0 }]
+      ]
+    },
+    "Build Task Item": {
+      "main": [
+        [{ "node": "Task to File", "type": "main", "index": 0 }]
+      ]
+    },
+    "Task to File": {
+      "main": [
+        [{ "node": "Write Task File", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "b1c2d3e4-f5a6-7890-abcd-ef1234567890",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ffd7cb84353aa39ad75055ccd52e39ab3cbeb17bf8a2ec023995a8853686a478"
+  },
+  "id": "pipeline-a-v1-complete",
+  "tags": []
+}

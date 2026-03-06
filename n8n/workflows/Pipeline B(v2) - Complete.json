@@ -1,0 +1,632 @@
+{
+  "name": "Pipeline B(v2) - Onboarding Update",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "/home/node/inputs/onboarding_calls",
+        "events": ["add"],
+        "options": {
+          "usePolling": true
+        }
+      },
+      "type": "n8n-nodes-base.localFileTrigger",
+      "typeVersion": 1,
+      "position": [-1040, 0],
+      "id": "b2a00000-0000-0000-0000-000000000001",
+      "name": "Watch Onboarding Folder"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [-1040, -200],
+      "id": "b2a00000-0000-0000-0000-000000000030",
+      "name": "Manual Test Trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "set-path-01",
+              "name": "path",
+              "value": "/home/node/inputs/onboarding_calls/*.txt",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-800, -200],
+      "id": "b2a00000-0000-0000-0000-000000000031",
+      "name": "Set Test Path"
+    },
+    {
+      "parameters": {
+        "fileSelector": "={{ $json.path }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [-800, 0],
+      "id": "b2a00000-0000-0000-0000-000000000002",
+      "name": "Read Onboarding Transcript"
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [-560, 0],
+      "id": "b2a00000-0000-0000-0000-000000000003",
+      "name": "Extract Text"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an AI that identifies the company from an onboarding call transcript.\n\nExtract ONLY the company name from this transcript and return a JSON object with exactly these fields:\n- company_name (the exact company name mentioned)\n- account_id (lowercase, spaces and special chars replaced with underscores)\n\nReturn ONLY valid JSON, no explanation, no markdown backticks.\n\nTranscript:\n{{ $json.data }}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [-320, 0],
+      "id": "b2a00000-0000-0000-0000-000000000004",
+      "name": "LLM Identify Account"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-flash-latest",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [-368, 200],
+      "id": "b2a00000-0000-0000-0000-000000000005",
+      "name": "Gemini Chat Model 1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "dAjmSirYQxBS5BHa",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse account identification and store transcript for later use\nconst raw = $input.first().json.text;\nconst cleaned = raw.replace(/```json|```/g, '').trim();\nconst identity = JSON.parse(cleaned);\n\nconst company = identity.company_name || 'unknown';\nconst account_id = company\n  .toLowerCase()\n  .replace(/[^a-z0-9]/g, '_')\n  .replace(/_+/g, '_')\n  .replace(/^_|_$/g, '');\n\n// Retrieve the original transcript text from Extract Text node\nconst transcript = $('Extract Text').first().json.data;\n\nreturn [{ json: { account_id, company_name: company, transcript } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-80, 0],
+      "id": "b2a00000-0000-0000-0000-000000000006",
+      "name": "Parse Account ID"
+    },
+    {
+      "parameters": {
+        "command": "=test -f /home/node/outputs/accounts/{{ $json.account_id }}/v1/account_memo.json && echo \"v1_exists\" || echo \"v1_missing\""
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [160, 0],
+      "id": "b2a00000-0000-0000-0000-000000000007",
+      "name": "Check v1 Exists"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "cond-v1-check",
+              "leftValue": "={{ ($json.stdout || '').trim() }}",
+              "rightValue": "v1_missing",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [400, 0],
+      "id": "b2a00000-0000-0000-0000-000000000008",
+      "name": "v1 Missing?"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Abort: no v1 found for this account\nconst account_id = $('Parse Account ID').first().json.account_id;\nthrow new Error(`No v1 account_memo.json found for account: ${account_id}. Run Pipeline A first.`);"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [640, -200],
+      "id": "b2a00000-0000-0000-0000-000000000009",
+      "name": "Error - No v1 Found"
+    },
+    {
+      "parameters": {
+        "command": "=test -f /home/node/outputs/accounts/{{ $('Parse Account ID').first().json.account_id }}/v2/account_memo.json && echo \"v2_exists\" || echo \"v2_not_exists\""
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [640, 0],
+      "id": "b2a00000-0000-0000-0000-000000000010",
+      "name": "Idempotency Check v2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "cond-idem-v2",
+              "leftValue": "={{ ($json.stdout || '').trim() }}",
+              "rightValue": "v2_exists",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [880, 0],
+      "id": "b2a00000-0000-0000-0000-000000000011",
+      "name": "Skip If v2 Exists"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1120, -200],
+      "id": "b2a00000-0000-0000-0000-000000000012",
+      "name": "Already Processed - Skip"
+    },
+    {
+      "parameters": {
+        "fileSelector": "=/home/node/outputs/accounts/{{ $('Parse Account ID').first().json.account_id }}/v1/account_memo.json",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [1120, 0],
+      "id": "b2a00000-0000-0000-0000-000000000013",
+      "name": "Load v1 Memo"
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [1360, 0],
+      "id": "b2a00000-0000-0000-0000-000000000014",
+      "name": "Extract v1 Text"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Combine v1 memo text with onboarding transcript for the LLM\nconst v1_memo_text = $input.first().json.data;\nconst { account_id, company_name, transcript } = $('Parse Account ID').first().json;\n\nreturn [{ json: { v1_memo_text, transcript, account_id, company_name } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1600, 0],
+      "id": "b2a00000-0000-0000-0000-000000000015",
+      "name": "Combine v1 + Transcript"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an AI that updates a business account memo based on an onboarding call transcript.\n\nHere is the existing v1 account memo:\n{{ $json.v1_memo_text }}\n\nHere is the onboarding call transcript:\n{{ $json.transcript }}\n\nYour task:\n1. Extract ALL new or updated information from the onboarding transcript.\n2. For EACH field in the memo, determine if the onboarding transcript provides an update.\n3. Produce a response as ONLY valid JSON with exactly these top-level keys:\n\n{\n  \"updated_memo\": { ... the full updated account memo with all fields ... },\n  \"changes\": [\n    {\n      \"field\": \"field_name\",\n      \"v1_value\": \"old value or null\",\n      \"v2_value\": \"new value\",\n      \"reason\": \"why this changed based on transcript\",\n      \"conflict\": false\n    }\n  ],\n  \"conflicts\": [\n    {\n      \"field\": \"field_name\",\n      \"v1_value\": \"old value\",\n      \"v2_value\": \"new contradicting value\",\n      \"resolution\": \"which value was kept and why\"\n    }\n  ]\n}\n\nRules:\n- updated_memo must include ALL original fields, updated where the transcript provides new info\n- If a field is not mentioned in the onboarding transcript, keep the v1 value unchanged\n- A conflict occurs when the onboarding transcript directly contradicts a v1 value (not just adds to it)\n- Mark conflict: true in changes array when there is a conflict\n- Never invent data. Only use information explicitly stated in the transcript.\n- Do not include account_id, version, or created_at in updated_memo — those are added programmatically\n- Return ONLY valid JSON, no explanation, no markdown backticks",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [1840, 0],
+      "id": "b2a00000-0000-0000-0000-000000000016",
+      "name": "LLM Extract Updates + Conflicts"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-flash-latest",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [1792, 200],
+      "id": "b2a00000-0000-0000-0000-000000000017",
+      "name": "Gemini Chat Model 2",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "dAjmSirYQxBS5BHa",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.text;\nconst cleaned = raw.replace(/```json|```/g, '').trim();\nconst result = JSON.parse(cleaned);\n\nconst { account_id, company_name } = $('Parse Account ID').first().json;\nconst v1_memo_text = $('Combine v1 + Transcript').first().json.v1_memo_text;\nconst v1_memo = JSON.parse(v1_memo_text);\n\n// Build v2 memo\nconst v2_memo = result.updated_memo;\nv2_memo.account_id = account_id;\nv2_memo.version = 'v2';\nv2_memo.created_at = new Date().toISOString();\nv2_memo.based_on_v1 = v1_memo.created_at;\n\n// Build changelog\nconst changelog = {\n  account_id,\n  from_version: 'v1',\n  to_version: 'v2',\n  generated_at: new Date().toISOString(),\n  total_changes: (result.changes || []).length,\n  total_conflicts: (result.conflicts || []).length,\n  changes: result.changes || [],\n  conflicts: result.conflicts || []\n};\n\nreturn [{\n  json: {\n    v2_memo,\n    v2_memo_text: JSON.stringify(v2_memo, null, 2),\n    changelog,\n    changelog_text: JSON.stringify(changelog, null, 2),\n    account_id,\n    company_name\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2080, 0],
+      "id": "b2a00000-0000-0000-0000-000000000018",
+      "name": "Build v2 Memo + Changelog"
+    },
+    {
+      "parameters": {
+        "command": "=mkdir -p /home/node/outputs/accounts/{{ $json.account_id }}/v2"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [2320, 0],
+      "id": "b2a00000-0000-0000-0000-000000000019",
+      "name": "Make v2 Dir"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: $('Build v2 Memo + Changelog').first().json }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2560, 0],
+      "id": "b2a00000-0000-0000-0000-000000000020",
+      "name": "Restore Data"
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "v2_memo_text",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [2800, 0],
+      "id": "b2a00000-0000-0000-0000-000000000021",
+      "name": "v2 Memo to File"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/home/node/outputs/accounts/{{ $('Build v2 Memo + Changelog').first().json.account_id }}/v2/account_memo.json",
+        "dataPropertyName": "=data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [3040, 0],
+      "id": "b2a00000-0000-0000-0000-000000000022",
+      "name": "Write v2 account_memo.json"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: $('Build v2 Memo + Changelog').first().json }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3280, 0],
+      "id": "b2a00000-0000-0000-0000-000000000023",
+      "name": "Restore Data 2"
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "changelog_text",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [3520, 0],
+      "id": "b2a00000-0000-0000-0000-000000000024",
+      "name": "Changelog to File"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/home/node/outputs/accounts/{{ $('Build v2 Memo + Changelog').first().json.account_id }}/v2/changelog.json",
+        "dataPropertyName": "=data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [3760, 0],
+      "id": "b2a00000-0000-0000-0000-000000000025",
+      "name": "Write changelog.json"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an AI that generates voice agent configurations for service trade businesses.\n\nUsing the account memo below, generate a Retell agent spec as ONLY valid JSON with exactly these fields:\n\n{\n  \"agent_name\": \"Clara - <company name>\",\n  \"voice_style\": \"professional and empathetic\",\n  \"version\": \"v2\",\n  \"key_variables\": {\n    \"timezone\": \"\",\n    \"business_hours\": \"\",\n    \"emergency_routing_number\": \"\",\n    \"transfer_number\": \"\"\n  },\n  \"tool_invocation_placeholders\": {\n    \"check_business_hours\": \"[internal] Check current time against business hours to determine call flow\",\n    \"transfer_call\": \"[internal] Initiate call transfer to the appropriate number\",\n    \"create_callback_task\": \"[internal] Log a callback request when transfer fails\",\n    \"lookup_account\": \"[internal] Look up caller information in the system\"\n  },\n  \"call_transfer_protocol\": \"\",\n  \"fallback_protocol\": \"\",\n  \"system_prompt\": \"\"\n}\n\nThe tool_invocation_placeholders field must contain internal tool names the agent uses behind the scenes. These must NEVER be mentioned to the caller. Generate placeholders relevant to the account routing and dispatch needs.\n\nThe system_prompt MUST follow this exact structure:\n\nBUSINESS HOURS FLOW:\n1. Greet the caller warmly and introduce yourself as Clara\n2. Ask the purpose of their call\n3. Collect caller name and phone number\n4. Transfer to the appropriate contact\n5. If transfer fails: apologize and assure callback within business hours\n6. Ask if anything else is needed\n7. Close the call politely\n\nAFTER HOURS FLOW:\n1. Greet the caller and inform them they have reached after hours\n2. Ask the purpose of their call\n3. Confirm whether it is an emergency\n4. If emergency: collect name, number, and address immediately then attempt transfer\n5. If transfer fails: apologize and assure someone will call back as soon as possible\n6. If non-emergency: collect details and confirm follow-up during next business hours\n7. Ask if anything else is needed\n8. Close the call politely\n\nRules:\n- Never mention function calls or internal tools to the caller\n- Only collect what is needed for routing and dispatch\n- Keep language natural, warm and professional\n- Fill key_variables using data from the memo\n- Return ONLY valid JSON, no explanation, no markdown backticks\n\nAccount Memo:\n{{ $('Build v2 Memo + Changelog').first().json.v2_memo_text }}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [4000, 0],
+      "id": "b2a00000-0000-0000-0000-000000000026",
+      "name": "LLM v2 Agent Spec"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-flash-latest",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [3952, 200],
+      "id": "b2a00000-0000-0000-0000-000000000027",
+      "name": "Gemini Chat Model 3",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "dAjmSirYQxBS5BHa",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.text;\nconst cleaned = raw.replace(/```json|```/g, '').trim();\nconst agent_spec = JSON.parse(cleaned);\n\nconst account_id = $('Build v2 Memo + Changelog').first().json.account_id;\n\nagent_spec.account_id = account_id;\nagent_spec.version = 'v2';\nagent_spec.generated_at = new Date().toISOString();\n\nreturn [{ json: { agent_spec_text: JSON.stringify(agent_spec, null, 2), account_id } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [4240, 0],
+      "id": "b2a00000-0000-0000-0000-000000000028",
+      "name": "Parse v2 Agent Spec"
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "agent_spec_text",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [4480, 0],
+      "id": "b2a00000-0000-0000-0000-000000000029",
+      "name": "v2 Spec to File"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/home/node/outputs/accounts/{{ $('Build v2 Memo + Changelog').first().json.account_id }}/v2/agent_spec.json",
+        "dataPropertyName": "=data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [4720, 0],
+      "id": "b2a00000-0000-0000-0000-000000000032",
+      "name": "Write v2 agent_spec.json"
+    },
+    {
+      "parameters": {
+        "jsCode": "const { account_id, company_name, changelog } = $('Build v2 Memo + Changelog').first().json;\n\nconst task = {\n  task_id: `${account_id}_v2_${Date.now()}`,\n  title: `Review v2 Agent: ${company_name || account_id}`,\n  account_id,\n  version: 'v2',\n  status: 'pending_review',\n  created_at: new Date().toISOString(),\n  description: `v2 account_memo and agent_spec generated for ${company_name || account_id} from onboarding call. ${changelog.total_changes} change(s), ${changelog.total_conflicts} conflict(s). Review outputs before deploying to Retell.`,\n  outputs: {\n    account_memo: `/outputs/accounts/${account_id}/v2/account_memo.json`,\n    agent_spec: `/outputs/accounts/${account_id}/v2/agent_spec.json`,\n    changelog: `/outputs/accounts/${account_id}/v2/changelog.json`\n  },\n  integration_note: 'Replace Write Task File with an HTTP Request node to push this task to Asana, Trello, or Notion externally.'\n};\n\nreturn [{ json: { task_text: JSON.stringify(task, null, 2) } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [4960, 0],
+      "id": "b2a00000-0000-0000-0000-000000000033",
+      "name": "Build v2 Task Item"
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "task_text",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [5200, 0],
+      "id": "b2a00000-0000-0000-0000-000000000034",
+      "name": "Task to File"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/home/node/outputs/tasks/{{ $('Build v2 Memo + Changelog').first().json.account_id }}_v2_task.json",
+        "dataPropertyName": "=data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [5440, 0],
+      "id": "b2a00000-0000-0000-0000-000000000035",
+      "name": "Write v2 Task File"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Watch Onboarding Folder": {
+      "main": [
+        [{ "node": "Read Onboarding Transcript", "type": "main", "index": 0 }]
+      ]
+    },
+    "Manual Test Trigger": {
+      "main": [
+        [{ "node": "Set Test Path", "type": "main", "index": 0 }]
+      ]
+    },
+    "Set Test Path": {
+      "main": [
+        [{ "node": "Read Onboarding Transcript", "type": "main", "index": 0 }]
+      ]
+    },
+    "Read Onboarding Transcript": {
+      "main": [
+        [{ "node": "Extract Text", "type": "main", "index": 0 }]
+      ]
+    },
+    "Extract Text": {
+      "main": [
+        [{ "node": "LLM Identify Account", "type": "main", "index": 0 }]
+      ]
+    },
+    "Gemini Chat Model 1": {
+      "ai_languageModel": [
+        [{ "node": "LLM Identify Account", "type": "ai_languageModel", "index": 0 }]
+      ]
+    },
+    "LLM Identify Account": {
+      "main": [
+        [{ "node": "Parse Account ID", "type": "main", "index": 0 }]
+      ]
+    },
+    "Parse Account ID": {
+      "main": [
+        [{ "node": "Check v1 Exists", "type": "main", "index": 0 }]
+      ]
+    },
+    "Check v1 Exists": {
+      "main": [
+        [{ "node": "v1 Missing?", "type": "main", "index": 0 }]
+      ]
+    },
+    "v1 Missing?": {
+      "main": [
+        [{ "node": "Error - No v1 Found", "type": "main", "index": 0 }],
+        [{ "node": "Idempotency Check v2", "type": "main", "index": 0 }]
+      ]
+    },
+    "Idempotency Check v2": {
+      "main": [
+        [{ "node": "Skip If v2 Exists", "type": "main", "index": 0 }]
+      ]
+    },
+    "Skip If v2 Exists": {
+      "main": [
+        [{ "node": "Already Processed - Skip", "type": "main", "index": 0 }],
+        [{ "node": "Load v1 Memo", "type": "main", "index": 0 }]
+      ]
+    },
+    "Load v1 Memo": {
+      "main": [
+        [{ "node": "Extract v1 Text", "type": "main", "index": 0 }]
+      ]
+    },
+    "Extract v1 Text": {
+      "main": [
+        [{ "node": "Combine v1 + Transcript", "type": "main", "index": 0 }]
+      ]
+    },
+    "Combine v1 + Transcript": {
+      "main": [
+        [{ "node": "LLM Extract Updates + Conflicts", "type": "main", "index": 0 }]
+      ]
+    },
+    "Gemini Chat Model 2": {
+      "ai_languageModel": [
+        [{ "node": "LLM Extract Updates + Conflicts", "type": "ai_languageModel", "index": 0 }]
+      ]
+    },
+    "LLM Extract Updates + Conflicts": {
+      "main": [
+        [{ "node": "Build v2 Memo + Changelog", "type": "main", "index": 0 }]
+      ]
+    },
+    "Build v2 Memo + Changelog": {
+      "main": [
+        [{ "node": "Make v2 Dir", "type": "main", "index": 0 }]
+      ]
+    },
+    "Make v2 Dir": {
+      "main": [
+        [{ "node": "Restore Data", "type": "main", "index": 0 }]
+      ]
+    },
+    "Restore Data": {
+      "main": [
+        [{ "node": "v2 Memo to File", "type": "main", "index": 0 }]
+      ]
+    },
+    "v2 Memo to File": {
+      "main": [
+        [{ "node": "Write v2 account_memo.json", "type": "main", "index": 0 }]
+      ]
+    },
+    "Write v2 account_memo.json": {
+      "main": [
+        [{ "node": "Restore Data 2", "type": "main", "index": 0 }]
+      ]
+    },
+    "Restore Data 2": {
+      "main": [
+        [{ "node": "Changelog to File", "type": "main", "index": 0 }]
+      ]
+    },
+    "Changelog to File": {
+      "main": [
+        [{ "node": "Write changelog.json", "type": "main", "index": 0 }]
+      ]
+    },
+    "Write changelog.json": {
+      "main": [
+        [{ "node": "LLM v2 Agent Spec", "type": "main", "index": 0 }]
+      ]
+    },
+    "Gemini Chat Model 3": {
+      "ai_languageModel": [
+        [{ "node": "LLM v2 Agent Spec", "type": "ai_languageModel", "index": 0 }]
+      ]
+    },
+    "LLM v2 Agent Spec": {
+      "main": [
+        [{ "node": "Parse v2 Agent Spec", "type": "main", "index": 0 }]
+      ]
+    },
+    "Parse v2 Agent Spec": {
+      "main": [
+        [{ "node": "v2 Spec to File", "type": "main", "index": 0 }]
+      ]
+    },
+    "v2 Spec to File": {
+      "main": [
+        [{ "node": "Write v2 agent_spec.json", "type": "main", "index": 0 }]
+      ]
+    },
+    "Write v2 agent_spec.json": {
+      "main": [
+        [{ "node": "Build v2 Task Item", "type": "main", "index": 0 }]
+      ]
+    },
+    "Build v2 Task Item": {
+      "main": [
+        [{ "node": "Task to File", "type": "main", "index": 0 }]
+      ]
+    },
+    "Task to File": {
+      "main": [
+        [{ "node": "Write v2 Task File", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "e1f2a3b4-c5d6-7890-abcd-ef1234567891",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ffd7cb84353aa39ad75055ccd52e39ab3cbeb17bf8a2ec023995a8853686a478"
+  },
+  "id": "pipeline-b-v2-onboarding",
+  "tags": []
+}
