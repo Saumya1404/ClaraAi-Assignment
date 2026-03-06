@@ -3,6 +3,7 @@
   "nodes": [
     {
       "parameters": {
+        "triggerOn": "folder",
         "path": "/home/node/inputs/demo_calls",
         "events": ["add"],
         "options": {
@@ -86,13 +87,7 @@
       "typeVersion": 1,
       "position": [-128, 200],
       "id": "c1a00000-0000-0000-0000-000000000005",
-      "name": "Gemini Chat Model 1",
-      "credentials": {
-        "googlePalmApi": {
-          "id": "dAjmSirYQxBS5BHa",
-          "name": "Google Gemini(PaLM) Api account"
-        }
-      }
+      "name": "Gemini Chat Model 1"
     },
     {
       "parameters": {
@@ -252,13 +247,7 @@
       "typeVersion": 1,
       "position": [2512, 200],
       "id": "c1a00000-0000-0000-0000-000000000018",
-      "name": "Gemini Chat Model 2",
-      "credentials": {
-        "googlePalmApi": {
-          "id": "dAjmSirYQxBS5BHa",
-          "name": "Google Gemini(PaLM) Api account"
-        }
-      }
+      "name": "Gemini Chat Model 2"
     },
     {
       "parameters": {
@@ -297,7 +286,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Task tracker item — swap the Write Task File node for an HTTP Request\n// node targeting Asana, Trello, or Notion when ready for production.\nconst { account_id, memo } = $('Parse Memo').first().json;\n\nconst task = {\n  task_id: `${account_id}_v1_${Date.now()}`,\n  title: `Review v1 Agent: ${memo.company_name || account_id}`,\n  account_id,\n  version: 'v1',\n  status: 'pending_review',\n  created_at: new Date().toISOString(),\n  description: `v1 account_memo and agent_spec generated for ${memo.company_name || account_id}. Review outputs before deploying to Retell.`,\n  outputs: {\n    account_memo: `/outputs/accounts/${account_id}/v1/account_memo.json`,\n    agent_spec: `/outputs/accounts/${account_id}/v1/agent_spec.json`,\n    validation_flags: `/outputs/accounts/${account_id}/v1/validation_flags.json`\n  },\n  integration_note: 'Replace Write Task File with an HTTP Request node to push this task to Asana, Trello, or Notion externally.'\n};\n\nreturn [{ json: { task_text: JSON.stringify(task, null, 2) } }];"
+        "jsCode": "const { account_id, memo } = $('Parse Memo').first().json;\n\nconst title = `Review v1 Agent: ${memo.company_name || account_id}`;\nconst description = `v1 account_memo and agent_spec generated for ${memo.company_name || account_id}. Review outputs before deploying to Retell.\n\nOutputs:\n- account_memo: /outputs/accounts/${account_id}/v1/account_memo.json\n- agent_spec: /outputs/accounts/${account_id}/v1/agent_spec.json\n- validation_flags: /outputs/accounts/${account_id}/v1/validation_flags.json`;\n\nconst task = {\n  task_id: `${account_id}_v1_${Date.now()}`,\n  title,\n  account_id,\n  version: 'v1',\n  status: 'pending_review',\n  created_at: new Date().toISOString(),\n  description,\n  outputs: {\n    account_memo: `/outputs/accounts/${account_id}/v1/account_memo.json`,\n    agent_spec: `/outputs/accounts/${account_id}/v1/agent_spec.json`,\n    validation_flags: `/outputs/accounts/${account_id}/v1/validation_flags.json`\n  }\n};\n\nreturn [{ json: { task_text: JSON.stringify(task, null, 2), asana_title: title, asana_description: description } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -329,6 +318,33 @@
       "position": [4000, 0],
       "id": "c1a00000-0000-0000-0000-000000000024",
       "name": "Write Task File"
+    },
+    {
+      "parameters": {
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "asanaApi",
+        "method": "POST",
+        "url": "https://app.asana.com/api/1.0/tasks",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ data: { name: $('Build Task Item').first().json.asana_title, notes: $('Build Task Item').first().json.asana_description, workspace: $env.ASANA_WORKSPACE_GID, projects: [$env.ASANA_PROJECT_GID] } }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [4240, 0],
+      "id": "c1a00000-0000-0000-0000-000000000030",
+      "name": "Create Asana Task",
+      "continueOnFail": true
     }
   ],
   "pinData": {},
@@ -452,6 +468,11 @@
     "Task to File": {
       "main": [
         [{ "node": "Write Task File", "type": "main", "index": 0 }]
+      ]
+    },
+    "Write Task File": {
+      "main": [
+        [{ "node": "Create Asana Task", "type": "main", "index": 0 }]
       ]
     }
   },
