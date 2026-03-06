@@ -1,19 +1,60 @@
-Agent: Thank you for calling, this is Clara. How can I help you today?
+Agent: Hi, thanks for joining the onboarding call. This is Clara. I have 
+your demo notes from earlier — let's go through any updates or 
+clarifications for your account setup. Can you confirm the company name?
 
-Client: Hi, yes. We're Anderson Fire Protection based in Dallas, Texas. 
-We handle sprinkler systems and fire alarms. Our office is open Monday 
-through Friday, 8am to 5pm. We're getting overwhelmed with after hours 
-calls and need help routing emergencies to our on-call technician. 
-His number is 214-555-0199. A real emergency for us is an active 
-sprinkler discharge or a fire alarm going off. Everything else can 
-wait till morning.
+Client: Yes, it's Anderson Fire Protection. Same as before.
 
-Agent: Got it. And what system do you currently use for job management?
+Agent: Perfect. Let me go through a few things. Any changes to your 
+business hours or office address?
 
-Client: We use ServiceTrade. But never create sprinkler jobs automatically, 
-we handle those manually.
+Client: Actually yes — we've expanded our hours. We're now open 7am to 
+6pm, Monday through Saturday. And our main office moved to 
+4521 Commerce Street, Dallas, Texas 75226.
 
-Agent: Understood. Is there anything else I should know?
+Agent: Got it. What about your services? Still sprinkler systems and 
+fire alarms?
 
-Client: If the on-call doesn't pick up within 60 seconds, just let the 
-caller know someone will call them back shortly.
+Client: We've added fire extinguisher inspections and hood suppression 
+systems to our service list. So four services total now.
+
+Agent: And for emergencies — same definition as before?
+
+Client: Mostly, but we want to add one more trigger. If there's a hood 
+suppression discharge in a restaurant kitchen, that counts as an 
+emergency too. So it's active sprinkler discharge, fire alarm going 
+off, or a hood suppression system discharge.
+
+Agent: Makes sense. Any changes to the on-call routing?
+
+Client: Yes, big change. We now have two on-call technicians. Try 
+Mike first at 214-555-0199, and if he doesn't answer within 45 seconds, 
+try Sarah at 214-555-0342. If neither picks up, take a message and 
+mark it urgent.
+
+Agent: So the timeout changed from 60 to 45 seconds?
+
+Client: Correct, 45 seconds per technician.
+
+Agent: What about non-emergency calls after hours?
+
+Client: Same as before — hold until the next business morning. But now 
+we want the agent to also send a text summary to our office manager 
+at 214-555-0500 for any after-hours call, emergency or not.
+
+Agent: Understood. Any changes to ServiceTrade integration?
+
+Client: Yeah, one update. You can now create fire alarm inspection jobs 
+automatically in ServiceTrade. But still never create sprinkler jobs 
+automatically — those stay manual.
+
+Agent: Anything about the office hours flow we should set up?
+
+Client: During office hours, just transfer all calls to our front desk 
+at 214-555-0100. If they don't pick up in 30 seconds, take a message.
+
+Agent: Got it. Anything else?
+
+Client: Our timezone is Central, CST. I think that was missing before. 
+Oh, and we're in the process of switching from ServiceTrade to 
+FieldEdge, but don't change anything yet — we'll update you when 
+that's finalized.
