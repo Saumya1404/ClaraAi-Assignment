@@ -1,0 +1,60 @@
+Agent: Hi, thanks for joining the onboarding call. This is Clara. I have 
+your demo notes from earlier — let's review any updates or changes for 
+your account configuration. Could you confirm the company name?
+
+Client: Sure, it's MetroSafe Fire Systems.
+
+Agent: Great. Let me check a few things. Any updates to your business 
+hours or office location?
+
+Client: Yes, we've adjusted both. We're now open from 8am to 7pm, 
+Monday through Friday, and 9am to 2pm on Saturdays. Our office also 
+relocated to 1780 Industrial Parkway, Suite 210, Atlanta, Georgia 30318.
+
+Agent: Noted. Are your services still the same — fire alarms and 
+sprinkler maintenance?
+
+Client: Mostly, but we've added two more services: emergency lighting 
+inspections and fire pump testing. So that brings us to four services.
+
+Agent: Understood. What situations should be treated as emergencies?
+
+Client: The main ones are still active sprinkler leaks and fire alarms 
+triggering unexpectedly. We also want to include fire pump failures as 
+an emergency condition.
+
+Agent: Got it. Any updates to your on-call technician routing?
+
+Client: Yes, we've changed that slightly. Call Jason first at 
+404-555-0128. If he doesn't answer within 50 seconds, try Danielle at 
+404-555-0174. If neither answers, the system should record a message 
+and mark it as high priority.
+
+Agent: So the timeout per technician is 50 seconds?
+
+Client: Correct.
+
+Agent: What should happen with non-emergency calls outside business 
+hours?
+
+Client: Those should still wait until the next business day. But now we 
+also want a call summary sent by text to our operations coordinator at 
+404-555-0601 whenever an after-hours call comes in.
+
+Agent: Okay. Any changes to your ServiceTrade integration?
+
+Client: Yes, one change. You can automatically create jobs for emergency 
+lighting inspections. But please don't auto-create fire pump service 
+jobs — those should still require manual approval.
+
+Agent: And during office hours, how should calls be handled?
+
+Client: Just transfer them directly to our reception desk at 
+404-555-0110. If there's no answer after 25 seconds, the agent should 
+take a voicemail.
+
+Agent: Perfect. Anything else you'd like to update?
+
+Client: One more thing — our timezone is Eastern, EST. Also, we're 
+considering moving from ServiceTrade to Jobber later this year, but 
+nothing should change until we confirm the switch.
