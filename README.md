@@ -54,6 +54,7 @@ An automated pipeline that converts raw demo-call and onboarding-call transcript
 | **n8n** (Docker, self-hosted) | Workflow orchestration, file triggers, JSON I/O | Free |
 | **Gemini Flash** (free tier) | LLM extraction & agent spec generation | Free |
 | **faster-whisper** (local) | Audio → text transcription via CTranslate2 | Free |
+| **Local JSON task tracker** | Zero-cost replacement for Asana task creation | Free |
 
 ## Prerequisites
 
@@ -150,6 +151,8 @@ outputs/
 | `changelog.json` | Per-field diff showing v1 → v2 changes, reasons, and conflict flags |
 | `*_task.json` | Task tracker entry with status, timestamps, and output file paths |
 
+This project tracks workflow task artifacts as per-account JSON files in `outputs/tasks/`.
+
 ## Pipeline Details
 
 ### Pipeline A — Demo Call → v1 Agent
@@ -226,7 +229,7 @@ This pipeline generates `agent_spec.json` files that are structured for Retell A
 - **Account matching heuristic**: Pipeline B identifies the account by asking the LLM to extract the company name from the onboarding transcript, then matches it to existing v1 output by `account_id`. If the company name is phrased differently across calls, the match may fail
 - **LLM extraction accuracy**: Gemini Flash occasionally misses or misinterprets fields from noisy transcripts; `validation_flags.json` helps catch these gaps
 - **Windows Docker file events**: Docker bind mounts on Windows don't forward native filesystem events. Polling mode is enabled as a workaround, which adds a small delay before trigger fires
-- **No persistent task tracker**: Task entries are written as flat JSON files — no Asana/Jira integration
+- **Lightweight task tracking**: Task artifacts are stored as flat JSON files for a reproducible zero-cost workflow, rather than being synced to a collaborative task platform
 
 ## What I Would Improve With Production Access
 
