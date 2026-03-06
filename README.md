@@ -54,13 +54,14 @@ An automated pipeline that converts raw demo-call and onboarding-call transcript
 | **n8n** (Docker, self-hosted) | Workflow orchestration, file triggers, JSON I/O | Free |
 | **Gemini Flash** (free tier) | LLM extraction & agent spec generation | Free |
 | **faster-whisper** (local) | Audio → text transcription via CTranslate2 | Free |
-| **Local JSON task tracker** | Zero-cost replacement for Asana task creation | Free |
+| **Asana** (free tier) | Task tracking — review items created per account | Free |
 
 ## Prerequisites
 
 - **Docker & Docker Compose** — to run n8n
 - **Python 3.12+** and **uv** — to run the transcription script
 - A free **Google Gemini API key** — [Get one here](https://aistudio.google.com/app/apikey)
+- A free **Asana account** — [Sign up here](https://asana.com/create-account)
 
 ## Quick Start
 
@@ -72,7 +73,7 @@ cd ClaraAi-Assignment
 
 # Create your env file
 cp .env.example .env
-# Edit .env and add your Gemini API key
+# Edit .env with your local values
 ```
 
 ### 2. Start n8n
@@ -89,9 +90,33 @@ Default credentials (set in `.env`): `admin@clara.com` / `Clara123`
 1. Open n8n → **Workflows** → **Import from File**
 2. Import both:
    - `n8n/workflows/Pipeline A(v1) - Complete.json`
-   - `n8n/workflows/Pipeline B(v2) - Onboarding Update.json`
-3. In each workflow, open the **Gemini Chat Model** node and connect your Gemini API credential
-4. **Activate** each workflow (toggle at top-right)
+    - `n8n/workflows/Pipeline B(v2) - Complete.json`
+3. In each workflow, open the **Gemini Chat Model** nodes and attach your Google Gemini credential in the n8n UI
+4. In each workflow, open the **Create Asana Task** node and attach an **Asana API** credential in the n8n UI using your Personal Access Token
+5. **Activate** each workflow (toggle at top-right)
+
+### 3a. Configure Asana
+
+1. In Asana, go to **My Settings → Apps → Personal Access Tokens** and create a token
+2. In n8n, go to **Credentials** → **Create Credential** → **Asana API** and paste that token there
+3. Add these to your `.env` file:
+    ```
+    ASANA_WORKSPACE_GID=your_workspace_gid
+    ASANA_PROJECT_GID=your_project_gid
+    ```
+4. To find the IDs: open a project in Asana and copy the numeric IDs from the URL, or use the [Asana API Explorer](https://developers.asana.com/docs/api-explorer)
+5. Restart n8n after changing `.env` so the container reloads the values
+
+The workflow JSONs do not include any access tokens or credential bindings. Gemini and Asana credentials are intentionally attached after import from the n8n UI, while `ASANA_WORKSPACE_GID` and `ASANA_PROJECT_GID` are still read from `.env`.
+
+> The Asana request node has `continueOnFail` enabled — if the credential is missing or invalid, the workflow will still complete and save all JSON files locally.
+
+## Workflow Comparison
+
+- `n8n/workflows/Pipeline A(v1) - Complete.json` is the canonical v1 workflow. The similarly named `Pipeline A (v1) - Complete.json` is an older export with a fixed manual test path, different model selection, different node IDs/layout, and older credential wiring.
+- Pipeline A creates the initial `v1` account memo from a demo call, validates critical fields, and writes `validation_flags.json`.
+- Pipeline B requires an existing v1 memo, identifies the account from an onboarding call, merges updates into `v2`, and writes `changelog.json` alongside the refreshed `agent_spec.json`.
+- Both workflows now follow the same credential rule: no access tokens or API keys are exported in workflow JSON; credentials must be attached in the n8n UI after import.
 
 ### 4. Transcribe audio (if you have audio files)
 
@@ -151,7 +176,9 @@ outputs/
 | `changelog.json` | Per-field diff showing v1 → v2 changes, reasons, and conflict flags |
 | `*_task.json` | Task tracker entry with status, timestamps, and output file paths |
 
-This project tracks workflow task artifacts as per-account JSON files in `outputs/tasks/`.
+This project tracks workflow tasks in two ways:
+- **Local JSON files** in `outputs/tasks/` (always written)
+- **Asana tasks** created automatically in your configured project (if Asana credentials are set)
 
 ## Pipeline Details
 
@@ -164,7 +191,7 @@ This project tracks workflow task artifacts as per-account JSON files in `output
 5. **Idempotency gate**: Checks if v1 output already exists — skips if so
 6. **Agent spec generation** (Gemini Flash) → `agent_spec.json` with persona, greeting, call flows
 7. **Validation**: Flags missing critical fields → `validation_flags.json`
-8. **Task tracker**: Creates a task entry with status and file references
+8. **Task tracker**: Creates a local task JSON + Asana task for review
 
 ### Pipeline B — Onboarding → v2 Agent
 
@@ -175,7 +202,7 @@ This project tracks workflow task artifacts as per-account JSON files in `output
 5. **Non-destructive merge**: Applies updates to produce v2 `account_memo.json` (v1 preserved intact)
 6. **Regenerate agent spec**: Produces updated `agent_spec.json` from v2 memo
 7. **Changelog**: Generates field-level `changelog.json` with v1 values, v2 values, reasons, and conflict flags
-8. **Task tracker**: Creates v2 task entry
+8. **Task tracker**: Creates a local task JSON + Asana task for review
 
 ## Plugging In Dataset Files
 
@@ -229,12 +256,12 @@ This pipeline generates `agent_spec.json` files that are structured for Retell A
 - **Account matching heuristic**: Pipeline B identifies the account by asking the LLM to extract the company name from the onboarding transcript, then matches it to existing v1 output by `account_id`. If the company name is phrased differently across calls, the match may fail
 - **LLM extraction accuracy**: Gemini Flash occasionally misses or misinterprets fields from noisy transcripts; `validation_flags.json` helps catch these gaps
 - **Windows Docker file events**: Docker bind mounts on Windows don't forward native filesystem events. Polling mode is enabled as a workaround, which adds a small delay before trigger fires
-- **Lightweight task tracking**: Task artifacts are stored as flat JSON files for a reproducible zero-cost workflow, rather than being synced to a collaborative task platform
+- **Lightweight task tracking**: Task artifacts are stored as local JSON files and also pushed to Asana. If Asana credentials are not configured, local files are still created (the Asana node uses `continueOnFail`)
 
 ## What I Would Improve With Production Access
 
 - **Retell API integration**: Automate agent creation and updates via Retell's API (programmatic provisioning instead of manual paste)
-- **Persistent task management**: Integrate with Asana, Linear, or Jira for real task tracking with assignees and SLAs
+- **Persistent task management**: Add assignees, due dates, and SLA tracking via Asana API (currently creates basic tasks)
 - **Database storage**: Replace flat-file JSON with a proper database (PostgreSQL) for querying, versioning, and audit trails
 - **Diff viewer UI**: Build a simple web dashboard to visualize v1 → v2 changes with highlighted diffs
 - **Batch metrics**: Aggregate extraction stats across accounts — field coverage, conflict rates, processing times
