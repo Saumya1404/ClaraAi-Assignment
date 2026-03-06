@@ -1,6 +1,6 @@
 # Pipeline B (v2) - Identify Account Prompt
 
-Source workflow: `n8n/workflows/Pipeline B(v2) - Onboarding Update.json`
+Source workflow: `n8n/workflows/Pipeline B(v2) - Complete.json`
 Source node: `LLM Identify Account`
 
 ```text

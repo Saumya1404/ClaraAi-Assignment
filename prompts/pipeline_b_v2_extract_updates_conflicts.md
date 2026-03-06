@@ -1,6 +1,6 @@
 # Pipeline B (v2) - Extract Updates and Conflicts Prompt
 
-Source workflow: `n8n/workflows/Pipeline B(v2) - Onboarding Update.json`
+Source workflow: `n8n/workflows/Pipeline B(v2) - Complete.json`
 Source node: `LLM Extract Updates + Conflicts`
 
 ```text
