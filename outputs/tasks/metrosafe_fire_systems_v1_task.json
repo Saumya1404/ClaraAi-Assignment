@@ -1,0 +1,14 @@
+{
+  "task_id": "metrosafe_fire_systems_v1_1772803106936",
+  "title": "Review v1 Agent: MetroSafe Fire Systems",
+  "account_id": "metrosafe_fire_systems",
+  "version": "v1",
+  "status": "pending_review",
+  "created_at": "2026-03-06T13:18:26.936Z",
+  "description": "v1 account_memo and agent_spec generated for MetroSafe Fire Systems. Review outputs before deploying to Retell.\n\nOutputs:\n- account_memo: /outputs/accounts/metrosafe_fire_systems/v1/account_memo.json\n- agent_spec: /outputs/accounts/metrosafe_fire_systems/v1/agent_spec.json\n- validation_flags: /outputs/accounts/metrosafe_fire_systems/v1/validation_flags.json",
+  "outputs": {
+    "account_memo": "/outputs/accounts/metrosafe_fire_systems/v1/account_memo.json",
+    "agent_spec": "/outputs/accounts/metrosafe_fire_systems/v1/agent_spec.json",
+    "validation_flags": "/outputs/accounts/metrosafe_fire_systems/v1/validation_flags.json"
+  }
+}

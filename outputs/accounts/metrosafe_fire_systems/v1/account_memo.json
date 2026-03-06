@@ -1,0 +1,53 @@
+{
+  "company_name": "MetroSafe Fire Systems",
+  "business_hours": {
+    "days": [
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday"
+    ],
+    "start": [
+      "8:00",
+      "8:00",
+      "8:00",
+      "8:00",
+      "8:00",
+      "9:00"
+    ],
+    "end": [
+      "19:00",
+      "19:00",
+      "19:00",
+      "19:00",
+      "19:00",
+      "14:00"
+    ],
+    "timezone": "Eastern, EST"
+  },
+  "office_address": "1780 Industrial Parkway, Suite 210, Atlanta, Georgia 30318",
+  "services_supported": [
+    "fire alarms",
+    "sprinkler maintenance",
+    "emergency lighting inspections",
+    "fire pump testing"
+  ],
+  "emergency_definition": [
+    "active sprinkler leaks",
+    "fire alarms triggering unexpectedly",
+    "fire pump failures"
+  ],
+  "emergency_routing_rules": "Call Jason first at 404-555-0128. If he doesn't answer within 50 seconds, try Danielle at 404-555-0174. If neither answers, the system should record a message and mark it as high priority.",
+  "non_emergency_routing_rules": "Wait until the next business day. A call summary should be sent by text to the operations coordinator at 404-555-0601.",
+  "call_transfer_rules": "Transfer directly to reception desk at 404-555-0110. If no answer after 25 seconds, agent should take a voicemail.",
+  "integration_constraints": "Automatically create jobs for emergency lighting inspections. Do not auto-create fire pump service jobs — those should still require manual approval.",
+  "after_hours_flow_summary": "Non-emergency calls wait until the next business day. Text summary sent to operations coordinator at 404-555-0601.",
+  "office_hours_flow_summary": "Transfer to reception at 404-555-0110. Voicemail if no answer after 25 seconds.",
+  "questions_or_unknowns": "Potential migration from ServiceTrade to Jobber later this year.",
+  "notes": null,
+  "account_id": "metrosafe_fire_systems",
+  "version": "v1",
+  "created_at": "2026-03-06T13:18:13.667Z"
+}
